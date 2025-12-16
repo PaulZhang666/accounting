@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>关卡选择 - 罐头厂重建</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#10b981">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/gameState.js"></script>
+    <style>
+        .level-button {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 4px solid #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .level-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+
+        .level-button.completed {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .level-button.current {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            animation: pulse 2s infinite;
+        }
+
+        .level-button.locked {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+            cursor: not-allowed;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .map-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .map-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+    </style>
+</head>
+<body class="bg-blue-100 overflow-hidden">
+    <div class="map-container">
+        <img src="./resources/ChatGPT Image Dec 16, 2025, 08_58_30 PM.png" alt="关卡地图" class="map-bg">
+
+        <!-- 关卡按钮 - 沿着道路精确放置 -->
+        <div class="level-button completed" style="bottom: 4%; left: 55%;" data-level="1">1</div>
+        <div class="level-button completed" style="bottom: 18%; left: 42%;" data-level="2">2</div>
+        <div class="level-button current" style="bottom: 28%; left: 58%;" data-level="3">3</div>
+        <div class="level-button locked" style="bottom: 40%; left: 72%;" data-level="4">4</div>
+        <div class="level-button locked" style="bottom: 42%; left: 45%;" data-level="5">5</div>
+        <div class="level-button locked" style="bottom: 51%; left: 30%;" data-level="6">6</div>
+
+        <!-- 返回按钮 -->
+        <button onclick="goBack()" class="absolute top-4 left-4 bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-800 px-4 py-2 rounded-lg shadow-lg transition-all duration-300">
+            ← 返回
+        </button>
+
+        <!-- 进度显示 -->
+        <div class="absolute top-4 right-4 bg-white bg-opacity-80 px-4 py-2 rounded-lg shadow-lg">
+            <div class="text-sm text-gray-600">进度</div>
+            <div class="text-lg font-bold text-gray-800">2/6 关卡</div>
+        </div>
+
+        <!-- 关卡确认弹窗 -->
+        <div id="levelModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg p-6 max-w-sm mx-4 text-center">
+                <h3 id="modalTitle" class="text-xl font-bold mb-4"></h3>
+                <p class="text-gray-600 mb-6">准备开始这个章节吗？</p>
+                <div class="flex gap-3">
+                    <button onclick="closeModal()" class="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg">取消</button>
+                    <button id="confirmBtn" class="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg">开始</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 关卡数据
+        const levels = [
+            { id: 1, name: "会计基础" },
+            { id: 2, name: "资产负债" },
+            { id: 3, name: "收入支出" },
+            { id: 4, name: "利润计算" },
+            { id: 5, name: "财务报表" },
+            { id: 6, name: "成本控制" }
+        ];
+
+        // 初始化关卡状态
+        function initLevels() {
+            document.querySelectorAll('.level-button').forEach(button => {
+                const levelId = parseInt(button.dataset.level);
+                
+                if (gameState.isLevelCompleted(levelId)) {
+                    button.className = 'level-button completed';
+                } else if (gameState.isLevelUnlocked(levelId)) {
+                    button.className = 'level-button current';
+                } else {
+                    button.className = 'level-button locked';
+                }
+            });
+
+            // 更新进度显示
+            const completed = gameState.progress.completedLevels.length;
+            document.querySelector('.text-lg.font-bold').textContent = `${completed}/6 关卡`;
+        }
+
+        // 点击关卡按钮
+        document.querySelectorAll('.level-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const levelId = parseInt(this.dataset.level);
+                const level = levels[levelId - 1];
+
+                if (!gameState.isLevelUnlocked(levelId)) {
+                    alert('此关卡尚未解锁！');
+                    return;
+                }
+
+                // 显示确认弹窗
+                showLevelModal(levelId, level.name);
+            });
+        });
+
+        function showLevelModal(levelId, levelName) {
+            document.getElementById('modalTitle').textContent = levelName;
+            document.getElementById('confirmBtn').onclick = () => {
+                window.location.href = `game.html?level=${levelId}`;
+            };
+            document.getElementById('levelModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('levelModal').classList.add('hidden');
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+
+        // 响应式调整
+        function adjustForMobile() {
+            if (window.innerWidth < 768) {
+                document.querySelectorAll('.level-button').forEach(button => {
+                    button.style.width = '50px';
+                    button.style.height = '50px';
+                    button.style.fontSize = '16px';
+                });
+            }
+        }
+
+        window.addEventListener('resize', adjustForMobile);
+        adjustForMobile();
+        
+        // 页面加载时初始化关卡状态
+        initLevels();
+    </script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏 - 罐头厂重建</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#10b981">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/gameState.js"></script>
+</head>
+<body class="bg-gradient-to-b from-blue-400 to-blue-600 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- 顶部信息 -->
+        <div class="flex justify-between items-center mb-6">
+            <button onclick="goBack()" class="bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-800 px-4 py-2 rounded-lg shadow-lg">
+                ← 返回
+            </button>
+            <div class="bg-white bg-opacity-80 px-4 py-2 rounded-lg shadow-lg">
+                <span id="levelTitle" class="font-bold"></span>
+            </div>
+            <div class="bg-white bg-opacity-80 px-4 py-2 rounded-lg shadow-lg">
+                <span id="questionCounter">1/2</span>
+            </div>
+        </div>
+
+        <!-- 题目卡片 -->
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-2xl mx-auto">
+            <h2 id="questionText" class="text-xl font-bold mb-6 text-center"></h2>
+            
+            <div id="optionsContainer" class="space-y-3">
+                <!-- 选项将通过JS动态生成 -->
+            </div>
+
+            <div class="mt-6 text-center">
+                <button id="nextBtn" onclick="nextQuestion()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
+                    下一题
+                </button>
+            </div>
+        </div>
+
+        <!-- 结果反馈 -->
+        <div id="feedback" class="mt-4 p-4 rounded-lg text-center hidden">
+            <p id="feedbackText" class="font-bold"></p>
+        </div>
+    </div>
+
+    <script>
+        // 题目数据
+        const questionsData = {
+            1: [
+                {
+                    question: "会计的基本等式是什么？",
+                    options: [
+                        "资产 = 负债 + 所有者权益",
+                        "收入 = 支出 + 利润",
+                        "资产 = 收入 - 支出",
+                        "负债 = 资产 - 收入"
+                    ],
+                    correct: 0,
+                    explanation: "会计基本等式：资产 = 负债 + 所有者权益，这是会计学的基础。"
+                },
+                {
+                    question: "下列哪项属于流动资产？",
+                    options: [
+                        "厂房设备",
+                        "现金",
+                        "土地",
+                        "专利权"
+                    ],
+                    correct: 1,
+                    explanation: "现金是最典型的流动资产，可以随时用于支付。"
+                }
+            ]
+        };
+
+        let currentLevel = 1;
+        let currentQuestion = 0;
+        let selectedAnswer = null;
+        let questions = [];
+
+        // 初始化
+        function init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            currentLevel = parseInt(urlParams.get('level')) || 1;
+            
+            questions = questionsData[currentLevel] || [];
+            document.getElementById('levelTitle').textContent = `第${currentLevel}章`;
+            
+            showQuestion();
+        }
+
+        function showQuestion() {
+            if (currentQuestion >= questions.length) {
+                showComplete();
+                return;
+            }
+
+            const question = questions[currentQuestion];
+            document.getElementById('questionText').textContent = question.question;
+            document.getElementById('questionCounter').textContent = `${currentQuestion + 1}/${questions.length}`;
+            
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'w-full p-4 text-left border-2 border-gray-200 rounded-lg hover:border-blue-300 transition-colors';
+                button.textContent = option;
+                button.onclick = () => selectAnswer(index, button);
+                container.appendChild(button);
+            });
+
+            selectedAnswer = null;
+            document.getElementById('nextBtn').disabled = true;
+            document.getElementById('feedback').classList.add('hidden');
+        }
+
+        function selectAnswer(index, button) {
+            // 清除之前的选择
+            document.querySelectorAll('#optionsContainer button').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'bg-blue-50', 'border-green-500', 'bg-green-50', 'border-red-500', 'bg-red-50');
+                btn.classList.add('border-gray-200');
+            });
+
+            selectedAnswer = index;
+            const question = questions[currentQuestion];
+            const isCorrect = index === question.correct;
+
+            // 显示正确答案
+            document.querySelectorAll('#optionsContainer button').forEach((btn, i) => {
+                if (i === question.correct) {
+                    btn.classList.add('border-green-500', 'bg-green-50');
+                } else if (i === index && !isCorrect) {
+                    btn.classList.add('border-red-500', 'bg-red-50');
+                }
+            });
+
+            // 显示反馈
+            const feedback = document.getElementById('feedback');
+            const feedbackText = document.getElementById('feedbackText');
+            feedback.className = `mt-4 p-4 rounded-lg text-center ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+            feedbackText.textContent = question.explanation;
+            feedback.classList.remove('hidden');
+
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            showQuestion();
+        }
+
+        function showComplete() {
+            // 标记关卡完成
+            gameState.completeLevel(currentLevel, 100);
+            
+            document.getElementById('questionText').textContent = '恭喜完成本章节！';
+            document.getElementById('optionsContainer').innerHTML = '';
+            document.getElementById('nextBtn').textContent = '返回关卡选择';
+            document.getElementById('nextBtn').onclick = () => window.location.href = 'level-select.html';
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        function goBack() {
+            window.location.href = 'level-select.html';
+        }
+
+        init();
+    </script>
+</body>
+</html>
