@@ -64,8 +64,8 @@
         }
 
         .chapter-icon {
-            width: 121px;
-            height: 247px;
+            width: 84.7px;
+            height: 172.9px;
             margin-bottom: 20px;
             cursor: pointer;
             transition: transform 0.3s ease;
@@ -76,7 +76,7 @@
         }
 
         .chapter-name {
-            height: 40px;
+            height: 30px;
             margin-bottom: 15px;
         }
 
@@ -153,10 +153,10 @@
         <div class="map-content">
             <!-- Chapter 1 背景色区域 (-300vh to -200vh) -->
             <div class="chapter-1-bg"></div>
-            
+
             <!-- 灰色背景区域 (-200vh to 0) -->
             <div class="grey-bg"></div>
-            
+
             <!-- 道路路径 -->
             <img src="./resources/road_path.png" alt="道路" class="road-path">
 
@@ -294,11 +294,23 @@
         // 初始化
         initChapters();
 
-        // 设置初始滚动位置到底部
-        window.addEventListener('load', function() {
+        // 设置初始滚动位置到底部 - 移动端优化
+        function scrollToBottom() {
             const scrollContainer = document.querySelector('.map-scroll-container');
             scrollContainer.scrollTop = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+        }
+
+        // 多重触发确保在移动端正常工作
+        window.addEventListener('load', function() {
+            setTimeout(scrollToBottom, 100);
         });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(scrollToBottom, 50);
+        });
+
+        // 页面完全加载后再次确保位置正确
+        setTimeout(scrollToBottom, 500);
     </script>
 </body>
 </html>
