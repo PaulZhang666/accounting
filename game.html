@@ -9,39 +9,71 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/gameState.js"></script>
 </head>
-<body class="bg-gradient-to-b from-blue-400 to-blue-600 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <!-- 顶部信息 -->
-        <div class="flex justify-between items-center mb-6">
-            <button onclick="goBack()" class="bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-800 px-4 py-2 rounded-lg shadow-lg">
-                ← 返回
+<body class="bg-gray-100 min-h-screen">
+    <div class="max-w-md mx-auto bg-white min-h-screen">
+        <!-- 顶部信息栏 -->
+        <div class="flex justify-between items-center p-4 bg-white">
+            <button onclick="goBack()" class="text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
             </button>
-            <div class="bg-white bg-opacity-80 px-4 py-2 rounded-lg shadow-lg">
-                <span id="levelTitle" class="font-bold"></span>
-            </div>
-            <div class="bg-white bg-opacity-80 px-4 py-2 rounded-lg shadow-lg">
-                <span id="questionCounter">1/2</span>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center text-orange-500">
+                    <span class="text-lg font-bold">120</span>
+                    <svg class="w-5 h-5 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                        <circle cx="10" cy="10" r="8"/>
+                    </svg>
+                </div>
+                <div class="flex items-center text-green-600">
+                    <span class="text-sm font-bold">Lv.5 (85%)</span>
+                    <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                    </svg>
+                </div>
             </div>
         </div>
 
-        <!-- 题目卡片 -->
-        <div class="bg-white rounded-lg shadow-xl p-6 max-w-2xl mx-auto">
-            <h2 id="questionText" class="text-xl font-bold mb-6 text-center"></h2>
-            
-            <div id="optionsContainer" class="space-y-3">
-                <!-- 选项将通过JS动态生成 -->
+        <!-- 进度条 -->
+        <div class="px-4 pb-4">
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div id="progressBar" class="bg-green-500 h-2 rounded-full transition-all duration-300" style="width: 50%"></div>
             </div>
+        </div>
 
-            <div class="mt-6 text-center">
-                <button id="nextBtn" onclick="nextQuestion()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
-                    下一题
-                </button>
+        <!-- 题目区域 -->
+        <div class="px-4 mb-6">
+            <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4 shadow-lg">
+                <div class="text-gray-500 text-sm mb-2">题干</div>
+                <div id="questionText" class="text-gray-800"></div>
             </div>
+        </div>
+
+        <!-- 选项区域 -->
+        <div id="optionsContainer" class="px-4 space-y-3 mb-20">
+            <!-- 选项将通过JS动态生成 -->
+        </div>
+
+        <!-- 提交按钮 -->
+        <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 bg-white">
+            <button id="nextBtn" onclick="nextQuestion()" class="w-full bg-green-500 hover:bg-green-600 text-white py-4 rounded-lg font-bold text-lg shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none" disabled>
+                提交
+            </button>
         </div>
 
         <!-- 结果反馈 -->
-        <div id="feedback" class="mt-4 p-4 rounded-lg text-center hidden">
-            <p id="feedbackText" class="font-bold"></p>
+        <div id="feedback" class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white rounded-t-2xl shadow-2xl transform translate-y-full transition-transform duration-300 hidden">
+            <div id="dragHandle" class="w-full flex justify-center py-3 cursor-grab active:cursor-grabbing">
+                <div class="w-10 h-1 bg-gray-300 rounded-full"></div>
+            </div>
+            <div id="feedbackContent" class="px-6 overflow-hidden flex-1">
+                <p id="feedbackText" class="mb-4"></p>
+            </div>
+        </div>
+
+        <!-- 固定在底部的按钮 -->
+        <div id="feedbackButton" class="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 bg-white hidden">
+            <button onclick="hideFeedback()" class="w-full py-3 rounded-lg font-bold text-white">继续</button>
         </div>
     </div>
 
@@ -50,26 +82,81 @@
         const questionsData = {
             1: [
                 {
-                    question: "会计的基本等式是什么？",
-                    options: [
-                        "资产 = 负债 + 所有者权益",
-                        "收入 = 支出 + 利润",
-                        "资产 = 收入 - 支出",
-                        "负债 = 资产 - 收入"
-                    ],
-                    correct: 0,
-                    explanation: "会计基本等式：资产 = 负债 + 所有者权益，这是会计学的基础。"
+                    question: "1. 会计以（ ）为主要计量单位，对经济活动进行核算和监督。",
+                    options: ["实物量度", "货币", "劳动量度", "时间量度"],
+                    correct: 1,
+                    explanation: "会计在记录和报告时，主要以货币为统一计量单位，以实现不同经济业务的综合汇总和比较。",
+                    practice: "不管是采购100斤蜂蜜、生产50箱罐头，还是支付3000元工资，这些业务性质完全不同，只有都换算成货币金额，才能汇总算出'总支出''总收入'，熊老板也能一眼看清工厂到底赚没赚钱、赚了多少呀～"
                 },
                 {
-                    question: "下列哪项属于流动资产？",
-                    options: [
-                        "厂房设备",
-                        "现金",
-                        "土地",
-                        "专利权"
-                    ],
+                    question: "2. 会计只能以货币作为计量单位。",
+                    options: ["是", "否"],
                     correct: 1,
-                    explanation: "现金是最典型的流动资产，可以随时用于支付。"
+                    explanation: "货币是主要尺度，但管理决策和报表附注中必须辅以实物、工时等非货币信息，以确保信息完整有用。",
+                    practice: "咱们账上记着'库存罐头价值8万元'，但如果不知道这8万元对应400箱罐头，就没法判断库存是否能满足下季度订单；不知道生产这些罐头用了2000个工时，也没法核算单位产品的人工成本呀～货币金额得搭配具体数量、工时等信息才有用！"
+                },
+                {
+                    question: "3. 下列哪项不属于会计的基本特征？",
+                    options: ["以货币为主要计量单位", "准确完整性", "连续系统性", "以预测经济前景为主要目的"],
+                    correct: 3,
+                    explanation: "预测经济前景是会计信息的应用（拓展职能），而非其记录和报告活动本身的基本特征。",
+                    practice: "我们的基本工作是'算清'这个月发生了什么。'预测'下个月产量，是基于清晰账目所做的管理决策，是第二步。"
+                },
+                {
+                    question: "4. 会计最基本的职能是（ ）。",
+                    options: ["会计核算", "会计监督", "预测经济前景", "参与经济决策"],
+                    correct: 0,
+                    explanation: "会计核算是产生会计信息的基础，没有核算提供的资料，监督和其他职能都无法进行。",
+                    practice: "连'买了多少、花了多少钱'都没记清楚，哪谈得上去检查对错或预测未来？"
+                },
+                {
+                    question: "5. 会计核算职能的内容包括（ ）。",
+                    options: ["确认经济业务性质", "计量资产与负债价值", "记录财务收支", "编制财务报告"],
+                    correct: 0,
+                    explanation: "会计核算流程包括：确认（定性）、计量（定量）、记录（登账）和报告（汇总输出）四个环节。",
+                    practice: "采购桃子时，先确认是'原材料'，再计量'价值5万元'，然后记入存货账本，最后汇总进季度报表。"
+                },
+                {
+                    question: "6. 会计监督职能的审查内容包括（ ）。",
+                    options: ["真实性", "完整性", "合法性", "合理性"],
+                    correct: 0,
+                    explanation: "会计监督需审查经济活动是否真实发生、单据是否齐全、是否符合法规、是否符合经营管理要求。",
+                    practice: "销售员报销差旅费，我要看：真出差了吗？（真实性）发票都齐吗？（完整性）是正规发票吗？（合法性）住宿费标准合理吗？（合理性）"
+                },
+                {
+                    question: "7. 会计监督体系中的'三位一体'不包括（ ）。",
+                    options: ["单位内部监督", "社会监督", "舆论监督", "国家监督"],
+                    correct: 2,
+                    explanation: "我国会计监督体系由单位内部监督、政府监督和社会监督构成，舆论监督并非法定组成部分。",
+                    practice: "我们自查（内部）、接受税务稽查（政府）、请事务所审计（社会）。森林小报的报道（舆论）不算正式的会计监督。"
+                },
+                {
+                    question: "8. 会计核算是会计监督的（ ）。",
+                    options: ["基础", "前提", "保障", "延伸"],
+                    correct: 0,
+                    explanation: "核算提供数据支撑，监督确保数据质量，二者辩证统一。",
+                    practice: "先把罐头收支、原料成本记清楚，才能核查是否有问题，没账本监督就是空谈。"
+                },
+                {
+                    question: "9. 会计监督是会计核算质量的（ ）。",
+                    options: ["前提", "基础", "保障", "目标"],
+                    correct: 2,
+                    explanation: "监督通过核查纠错，确保核算信息真实合规，是保障核算质量的关键。",
+                    practice: "监督能查出记账错误、虚报费用，守住账本数据的准确性，就是质量保障。"
+                },
+                {
+                    question: "10. 下列各项中，属于会计拓展职能的是（ ）。",
+                    options: ["进行财产清查", "编制财务报表", "评价经营业绩", "审核原始凭证"],
+                    correct: 2,
+                    explanation: "会计拓展职能是核算、监督基础上的延伸功能，评价经营业绩需基于核算数据开展分析，属于拓展职能；A、B、D均为基本核算或监督相关的基础工作。",
+                    practice: "财产清查、编报表、审核凭证是'记好账'的基础工作，评价罐头厂今年赚得好不好，是用账本数据做的进阶分析，属于拓展职能。"
+                },
+                {
+                    question: "11. 下列关于会计目标的表述，正确的是（ ）。",
+                    options: ["会计目标仅需向企业内部员工提供会计信息", "会计目标是会计工作应完成的任务或达到的标准", "会计目标是为了让企业报表看起来更'美观'而调整数据", "会计目标仅反映企业投资者的个人收益情况"],
+                    correct: 1,
+                    explanation: "会计目标是会计工作的任务或标准，核心是向使用者提供有用信息、反映管理层受托责任；A（信息仅内部用）、C（篡改数据）、D（仅反映投资者收益）均错误。",
+                    practice: "会计目标是把罐头厂的账记清楚、提供有用信息，不是只给内部看、改数据，也不是只算投资者赚多少钱～"
                 }
             ]
         };
@@ -78,16 +165,91 @@
         let currentQuestion = 0;
         let selectedAnswer = null;
         let questions = [];
+        let isDragging = false;
+        let startY = 0;
+        let currentY = 0;
+        let initialHeight = 0;
 
         // 初始化
         function init() {
             const urlParams = new URLSearchParams(window.location.search);
-            currentLevel = parseInt(urlParams.get('level')) || 1;
-            
+            currentLevel = parseInt(urlParams.get('section')) || 1;
+
             questions = questionsData[currentLevel] || [];
-            document.getElementById('levelTitle').textContent = `第${currentLevel}章`;
-            
+            updateProgress();
             showQuestion();
+            setupDragHandlers();
+        }
+
+        function setupDragHandlers() {
+            const dragHandle = document.getElementById('dragHandle');
+            const feedback = document.getElementById('feedback');
+            const feedbackButton = document.getElementById('feedbackButton');
+
+            dragHandle.addEventListener('touchstart', handleStart, { passive: false });
+            dragHandle.addEventListener('mousedown', handleStart);
+
+            document.addEventListener('touchmove', handleMove, { passive: false });
+            document.addEventListener('mousemove', handleMove);
+
+            document.addEventListener('touchend', handleEnd);
+            document.addEventListener('mouseup', handleEnd);
+
+            function handleStart(e) {
+                isDragging = true;
+                startY = e.touches ? e.touches[0].clientY : e.clientY;
+                feedback.style.transition = 'none';
+            }
+
+            function handleMove(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+
+                currentY = e.touches ? e.touches[0].clientY : e.clientY;
+                const deltaY = startY - currentY;
+
+                const screenHeight = window.innerHeight;
+                const maxHeight = screenHeight * 0.67;
+                const minHeight = 300;
+
+                if (deltaY > 0) {
+                    // Dragging up
+                    const moveDistance = Math.min(deltaY, maxHeight - minHeight);
+                    feedback.style.height = `${minHeight + moveDistance}px`;
+                } else {
+                    // Dragging down
+                    const currentHeight = feedback.offsetHeight;
+                    const moveDistance = Math.abs(deltaY);
+                    const newHeight = Math.max(minHeight, currentHeight - moveDistance);
+                    feedback.style.height = `${newHeight}px`;
+                }
+            }
+
+            function handleEnd() {
+                if (!isDragging) return;
+                isDragging = false;
+
+                const deltaY = startY - currentY;
+                feedback.style.transition = 'height 0.3s ease';
+
+                if (deltaY > 100) {
+                    // Expand to 2/3 screen
+                    const screenHeight = window.innerHeight;
+                    feedback.style.height = `${screenHeight * 0.67}px`;
+                    feedback.style.display = 'flex';
+                    feedback.style.flexDirection = 'column';
+                } else {
+                    // Return to normal size
+                    feedback.style.height = 'auto';
+                    feedback.style.display = 'block';
+                }
+                // Button always stays visible
+            }
+        }
+
+        function updateProgress() {
+            const progress = ((currentQuestion + 1) / questions.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
         }
 
         function showQuestion() {
@@ -98,14 +260,14 @@
 
             const question = questions[currentQuestion];
             document.getElementById('questionText').textContent = question.question;
-            document.getElementById('questionCounter').textContent = `${currentQuestion + 1}/${questions.length}`;
-            
+            updateProgress();
+
             const container = document.getElementById('optionsContainer');
             container.innerHTML = '';
-            
+
             question.options.forEach((option, index) => {
                 const button = document.createElement('button');
-                button.className = 'w-full p-4 text-left border-2 border-gray-200 rounded-lg hover:border-blue-300 transition-colors';
+                button.className = 'w-full p-4 text-left bg-white border border-gray-200 rounded-lg text-gray-700 transition-colors shadow-md hover:shadow-lg';
                 button.textContent = option;
                 button.onclick = () => selectAnswer(index, button);
                 container.appendChild(button);
@@ -113,48 +275,116 @@
 
             selectedAnswer = null;
             document.getElementById('nextBtn').disabled = true;
-            document.getElementById('feedback').classList.add('hidden');
+            document.getElementById('nextBtn').textContent = '提交';
         }
 
         function selectAnswer(index, button) {
             // 清除之前的选择
             document.querySelectorAll('#optionsContainer button').forEach(btn => {
-                btn.classList.remove('border-blue-500', 'bg-blue-50', 'border-green-500', 'bg-green-50', 'border-red-500', 'bg-red-50');
-                btn.classList.add('border-gray-200');
+                btn.classList.remove('bg-blue-100', 'border-blue-300');
+                btn.classList.add('bg-white', 'border-gray-200');
             });
+
+            // 选中当前选项
+            button.classList.remove('bg-white', 'border-gray-200');
+            button.classList.add('bg-blue-100', 'border-blue-300');
 
             selectedAnswer = index;
-            const question = questions[currentQuestion];
-            const isCorrect = index === question.correct;
-
-            // 显示正确答案
-            document.querySelectorAll('#optionsContainer button').forEach((btn, i) => {
-                if (i === question.correct) {
-                    btn.classList.add('border-green-500', 'bg-green-50');
-                } else if (i === index && !isCorrect) {
-                    btn.classList.add('border-red-500', 'bg-red-50');
-                }
-            });
-
-            // 显示反馈
-            const feedback = document.getElementById('feedback');
-            const feedbackText = document.getElementById('feedbackText');
-            feedback.className = `mt-4 p-4 rounded-lg text-center ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
-            feedbackText.textContent = question.explanation;
-            feedback.classList.remove('hidden');
-
             document.getElementById('nextBtn').disabled = false;
         }
 
         function nextQuestion() {
-            currentQuestion++;
-            showQuestion();
+            if (selectedAnswer === null) return;
+
+            const question = questions[currentQuestion];
+            const isCorrect = selectedAnswer === question.correct;
+
+            // 显示反馈
+            showFeedback(isCorrect, question.explanation);
+        }
+
+        function showFeedback(isCorrect, explanation) {
+            const question = questions[currentQuestion];
+
+            // Update option colors
+            document.querySelectorAll('#optionsContainer button').forEach((btn, i) => {
+                if (i === question.correct) {
+                    btn.classList.remove('bg-white', 'border-gray-200', 'bg-blue-100', 'border-blue-300');
+                    btn.classList.add('bg-green-200', 'border-green-300');
+                } else if (i === selectedAnswer && !isCorrect) {
+                    btn.classList.remove('bg-white', 'border-gray-200', 'bg-blue-100', 'border-blue-300');
+                    btn.classList.add('bg-red-200', 'border-red-300');
+                }
+            });
+
+            // Show bottom sheet feedback
+            const feedback = document.getElementById('feedback');
+            const feedbackButton = document.getElementById('feedbackButton');
+            const feedbackText = document.getElementById('feedbackText');
+
+            const correctAnswerText = question.options[question.correct];
+            const userAnswerText = question.options[selectedAnswer];
+
+            feedbackText.innerHTML = `
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold mr-3 ${isCorrect ? 'bg-green-500' : 'bg-red-500'}">
+                        ${isCorrect ? '✓' : '✗'}
+                    </div>
+                    <div class="text-lg font-bold ${isCorrect ? 'text-green-600' : 'text-red-600'}">
+                        ${isCorrect ? '正确' : '错误'}
+                    </div>
+                </div>
+                <div class="text-left space-y-2 mb-4">
+                    <div><span class="font-bold">正确答案：</span>${correctAnswerText}</div>
+                    <div><span class="font-bold">你的答案：</span>${userAnswerText}</div>
+                </div>
+                <div class="text-left text-sm text-gray-700 mb-4">
+                    <div class="font-bold mb-1">会计术语：</div>
+                    <div>${explanation}</div>
+                    <div class="font-bold mb-1 mt-3">罐头厂实战：</div>
+                    <div>${question.practice || '在罐头厂的日常经营中，这个概念帮助我们更好地管理财务。'}</div>
+                </div>
+            `;
+
+            // Update continue button
+            const continueBtn = feedbackButton.querySelector('button');
+            continueBtn.textContent = isCorrect ? '下一题' : '知道了';
+            continueBtn.className = `w-full py-3 rounded-lg font-bold text-white ${isCorrect ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'}`;
+
+            // Apply background color and show
+            feedback.className = `fixed bottom-0 left-0 right-0 max-w-md mx-auto rounded-t-2xl shadow-2xl transform transition-transform duration-300 ${isCorrect ? 'bg-green-100' : 'bg-red-100'}`;
+            feedback.classList.remove('translate-y-full');
+
+            // Show button with matching background
+            feedbackButton.className = `fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 ${isCorrect ? 'bg-green-100' : 'bg-red-100'}`;
+            feedbackButton.classList.remove('hidden');
+        }
+
+        function hideFeedback() {
+            const feedback = document.getElementById('feedback');
+            const feedbackButton = document.getElementById('feedbackButton');
+
+            feedback.classList.add('translate-y-full');
+            feedbackButton.classList.add('hidden');
+
+            setTimeout(() => {
+                feedback.classList.add('hidden');
+                feedback.style.height = 'auto';
+                feedback.style.display = 'block';
+                currentQuestion++;
+
+                if (currentQuestion >= questions.length) {
+                    showComplete();
+                } else {
+                    showQuestion();
+                }
+            }, 300);
         }
 
         function showComplete() {
             // 标记关卡完成
             gameState.completeLevel(currentLevel, 100);
-            
+
             document.getElementById('questionText').textContent = '恭喜完成本章节！';
             document.getElementById('optionsContainer').innerHTML = '';
             document.getElementById('nextBtn').textContent = '返回关卡选择';
